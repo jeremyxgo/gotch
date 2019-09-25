@@ -1,6 +1,6 @@
 {
   "name": "gotch",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A simple, elegant and lightweight HTTP client for browser",
   "main": "dist/gotch.js",
   "module": "dist/gotch.esm.js",

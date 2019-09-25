@@ -1,12 +1,16 @@
 class Gotch {
   constructor(config = {}) {
-    this.configBackup = { ...config };
-    this.config = { ...config };
     this.xhrTagMap = {};
-    this.rollbackConfig();
+    this.updateConfig(config);
   }
 
-  rollbackConfig() {
+  updateConfig(config = {}) {
+    this.configBackup = { ...this.configBackup, ...config };
+    this.config = { ...this.config, ...config };
+    this.cleanConfig();
+  }
+
+  cleanConfig() {
     this.config = {
       baseURL: this.configBackup.baseURL || '',
       type: this.configBackup.type || '',
@@ -116,7 +120,7 @@ class Gotch {
     const requestURL = this.buildRequestURL(url);
     const requestOptions = this.buildRequestOptions(options);
     const promise = this.dispatchRequest(requestURL, requestOptions);
-    this.rollbackConfig();
+    this.cleanConfig();
     return promise;
   }
 
