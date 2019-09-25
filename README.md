@@ -7,7 +7,11 @@
 </p>
 
 # 
-![GitHub](https://img.shields.io/github/license/jeremyxgo/gotch?style=for-the-badge)
+
+![npm version](https://img.shields.io/npm/v/gotch?style=flat-square)
+![install size](https://flat.badgen.net/packagephobia/install/gotch)
+![dev dependencies](https://img.shields.io/david/dev/jeremyxgo/gotch?style=flat-square)
+![github license](https://img.shields.io/github/license/jeremyxgo/gotch?style=flat-square)
 
 ## Features
 
@@ -16,6 +20,7 @@
 - Transform JSON data automatically
 - Monitor download and upload progress
 - Cancel requests
+- Less than 30kb
 
 ## Installation
 
@@ -65,6 +70,7 @@ Send a `POST` request
 ```js
 // handle with promise chaining
 gotch
+  .withType('json')
   .post('/users', {
     firstName: 'Jermey',
     lastName: 'Lin',
@@ -79,10 +85,12 @@ gotch
 // handle with async/await syntax
 // NOTE: you should wrap the following code in an async function
 try {
-  const data = await gotch.post('/users', {
-    firstName: 'Jermey',
-    lastName: 'Lin',
-  });
+  const data = await gotch
+    .withType('json')
+    .post('/users', {
+      firstName: 'Jermey',
+      lastName: 'Lin',
+    });
   console.log(data);
 } catch (error) {
   console.log(error);
@@ -218,6 +226,13 @@ Overwrite `authorization` for next request
 ```js
 gotch.withAuthorization('Bearer xxxxx.yyyyy.zzzzz');
 // returns a Gotch instance
+
+// or 
+gotch.withAuthorization(() => {
+  const token = window.localStorage.getItem('token');
+  return `Bearer ${token}`;
+});
+// returns a Gotch instance
 ```
 
 ### .withOnUploadProgress(handleEvent)
@@ -300,6 +315,92 @@ Cancel request(s) grouping by the same tag
 ```js
 gotch.cancel('get_user_req');
 // all the requests have the `get_user_req` tag will be aborted
+```
+
+## Recommended way to organize your API
+
+Create an API entry file to hold the `Gotch` instances and separate your API by domains or anyway you like:
+
+```js
+// api/index.js
+import UserAPI from './UserAPI';
+import ItemAPI from './ItemAPI';
+
+class API {
+  constructor() {
+    this.userAPI = new UserAPI();
+    this.itemAPI = new ItemAPI();
+  }
+}
+
+export default new API();
+```
+
+```js
+// api/UsersAPI.js
+import gotch from 'gotch';
+
+class UserAPI {
+  constructor() {
+    this.API = gotch.create({
+      baseURL: 'https://example.com/api/v1/users',
+      type: 'json',
+    });
+  }
+
+  getUser(id) {
+    return this.API.get(`/${id}`);
+  }
+
+  addUser(user) {
+    return this.API.post('', user);
+  }
+}
+
+export default UserAPI;
+```
+
+```js
+// api/ItemAPI.js
+import gotch from 'gotch';
+
+class ItemAPI {
+  constructor() {
+    this.API = gotch.create({
+      baseURL: 'https://example.com/api/v1/items',
+      type: 'json',
+    });
+  }
+
+  getItems() {
+    return this.API.get();
+  }
+
+  getItem(id) {
+    return this.API.get(`/${id}`);
+  }
+
+  removeItem(id) {
+    return this.API.delete(`/${id}`);
+  }
+}
+
+export default ItemAPI;
+```
+
+Import API entry and use the `Gotch` instance as how you use it before:
+
+```js
+// someFile.js
+import api from 'your-relative-path/api';
+// ...
+try {
+  const user = await api.userAPI.getUser(1);
+  console.log(user);
+} catch (e) {
+  console.log(e);
+}
+// ...
 ```
 
 ## License
