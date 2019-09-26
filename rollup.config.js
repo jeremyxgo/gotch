@@ -12,6 +12,11 @@ const config = {
       name: pkg.name,
     },
     {
+      file: pkg.main.replace(/\.js$/, '.min.js'),
+      format: 'umd',
+      name: pkg.name,
+    },
+    {
       file: pkg.module,
       format: 'esm',
     },
@@ -19,7 +24,9 @@ const config = {
   plugins: [
     babel(),
     resolve(),
-    terser(),
+    terser({
+      include: /^.+\.(min|esm)\.js$/,
+    }),
   ],
 };
 

@@ -8,9 +8,10 @@
 
 # 
 
-![npm version](https://img.shields.io/npm/v/gotch?style=flat-square)
-![install size](https://flat.badgen.net/packagephobia/install/gotch)
-![dev dependencies](https://img.shields.io/david/dev/jeremyxgo/gotch?style=flat-square)
+[![npm version](https://img.shields.io/npm/v/gotch?style=flat-square)](https://www.npmjs.com/package/gotch)
+[![npm bundle size](https://img.shields.io/bundlephobia/min/gotch?style=flat-square)](https://bundlephobia.com/result?p=gotch@1.1.1)
+[![install size](https://flat.badgen.net/packagephobia/install/gotch)](https://packagephobia.now.sh/result?p=gotch)
+[![dev dependencies](https://img.shields.io/david/dev/jeremyxgo/gotch?style=flat-square)](https://david-dm.org/jeremyxgo/gotch?type=dev)
 ![github license](https://img.shields.io/github/license/jeremyxgo/gotch?style=flat-square)
 
 ## Features
@@ -20,7 +21,7 @@
 - Transform JSON data automatically
 - Monitor download and upload progress
 - Cancel requests
-- Less than 30kb
+- Less than 50kb
 
 ## Installation
 
@@ -33,7 +34,7 @@ $ yarn add gotch
 ```
 or via CDN
 ```html
-<script src="https://unpkg.com/gotch/dist/gotch.js"></script>
+<script src="https://unpkg.com/gotch/dist/gotch.min.js"></script>
 ```
 
 ## Basic Usage
@@ -317,24 +318,9 @@ gotch.cancel('get_user_req');
 // all the requests have the `get_user_req` tag will be aborted
 ```
 
-## Recommended way to organize your API
+## How to organize your API endpoints
 
-Create an API entry file to hold the `Gotch` instances and separate your API by domains or anyway you like:
-
-```js
-// api/index.js
-import UserAPI from './UserAPI';
-import ItemAPI from './ItemAPI';
-
-class API {
-  constructor() {
-    this.userAPI = new UserAPI();
-    this.itemAPI = new ItemAPI();
-  }
-}
-
-export default new API();
-```
+1. Separate your API by domains or anyway you like:
 
 ```js
 // api/UsersAPI.js
@@ -388,7 +374,24 @@ class ItemAPI {
 export default ItemAPI;
 ```
 
-Import API entry and use the `Gotch` instance as how you use it before:
+2. Create an API entry to hold the separated `Gotch` instances and export it as a singleton:
+
+```js
+// api/index.js
+import UserAPI from './UserAPI';
+import ItemAPI from './ItemAPI';
+
+class API {
+  constructor() {
+    this.userAPI = new UserAPI();
+    this.itemAPI = new ItemAPI();
+  }
+}
+
+export default new API();
+```
+
+3. Import API entry and use the `Gotch` instance as how you use it before:
 
 ```js
 // someFile.js
