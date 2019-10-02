@@ -82,14 +82,7 @@ class Gotch {
    * @param {(string|function)} authorization
    */
   withAuthorization(authorization) {
-    if (typeof authorization === 'string') {
-      this.config.authorization = authorization;
-    }
-
-    if (typeof authorization === 'function') {
-      this.config.authorization = authorization();
-    }
-
+    this.config.authorization = authorization;
     return this;
   }
 
@@ -292,7 +285,13 @@ class Gotch {
     }
 
     if (this.config.authorization) {
-      requestOptions.headers.Authorization = this.config.authorization;
+      if (typeof this.config.authorization === 'string') {
+        requestOptions.headers.Authorization = this.config.authorization;
+      }
+
+      if (typeof this.config.authorization === 'function') {
+        requestOptions.headers.Authorization = this.config.authorization();
+      }
     }
 
     if (this.config.type === 'text') {

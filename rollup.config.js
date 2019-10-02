@@ -25,7 +25,7 @@ const config = {
     babel(),
     resolve(),
     terser({
-      include: /^.+\.(min|esm)\.js$/,
+      include: /^.+\.min\.js$/,
     }),
   ],
 };

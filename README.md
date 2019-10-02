@@ -9,7 +9,7 @@
 # 
 
 [![npm version](https://img.shields.io/npm/v/gotch?style=flat-square)](https://www.npmjs.com/package/gotch)
-[![npm bundle size](https://img.shields.io/bundlephobia/min/gotch?style=flat-square)](https://bundlephobia.com/result?p=gotch@1.1.1)
+[![npm bundle size](https://img.shields.io/bundlephobia/min/gotch?style=flat-square)](https://bundlephobia.com/result?p=gotch@1.1.2)
 [![install size](https://flat.badgen.net/packagephobia/install/gotch)](https://packagephobia.now.sh/result?p=gotch)
 [![dev dependencies](https://img.shields.io/david/dev/jeremyxgo/gotch?style=flat-square)](https://david-dm.org/jeremyxgo/gotch?type=dev)
 ![github license](https://img.shields.io/github/license/jeremyxgo/gotch?style=flat-square)
@@ -21,7 +21,6 @@
 - Transform JSON data automatically
 - Monitor download and upload progress
 - Cancel requests
-- Less than 50kb
 
 ## Installation
 
