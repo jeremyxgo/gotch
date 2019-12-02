@@ -457,9 +457,11 @@ function transformToForm(params) {
 
     Object.keys(params).forEach((key) => {
       const value = params[key];
-      const parsedValue = value === undefined ? value : JSON.stringify(value);
 
-      if (value === undefined || parsedValue === undefined) {
+      if (typeof value === 'function'
+        || value === undefined
+        || value === null
+      ) {
         return;
       }
 
@@ -467,8 +469,10 @@ function transformToForm(params) {
         value.forEach((item) => {
           formData.append(key, item);
         });
+      } else if (value instanceof File) {
+        formData.append(key, value);
       } else {
-        formData.append(key, parsedValue);
+        formData.append(key, JSON.stringify(value));
       }
     });
 
