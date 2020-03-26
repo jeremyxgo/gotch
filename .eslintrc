@@ -16,7 +16,6 @@
     "sourceType": "module"
   },
   "rules": {
-    "no-use-before-define": "off",
     "class-methods-use-this": "off"
   }
 }
