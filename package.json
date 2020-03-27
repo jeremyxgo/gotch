@@ -1,10 +1,10 @@
 {
   "name": "gotch",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A simple, elegant and lightweight HTTP client for browser",
   "main": "dist/gotch.js",
   "module": "dist/gotch.esm.js",
-  "types": "lib/gotch.d.ts",
+  "types": "dist/gotch.d.ts",
   "scripts": {
     "lint": "eslint lib --max-warnings 0",
     "build": "rollup -c",
