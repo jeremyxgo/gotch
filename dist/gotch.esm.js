@@ -337,7 +337,7 @@ var Gotch = /*#__PURE__*/function () {
     value: function _delete(url) {
       return this.request(url, {
         method: 'DELETE'
-      }).then(this.handleResponse.bind(this));
+      });
     }
     /**
      * @param {string} tag
