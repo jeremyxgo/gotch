@@ -124,6 +124,12 @@
     throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
+  var _require = require('follow-redirects'),
+      http = _require.http,
+      https = _require.https;
+
+  var urlLib = require('url');
+
   var Gotch = /*#__PURE__*/function () {
     /**
      * @typedef {object} GotchConfig
@@ -153,7 +159,7 @@
 
       _classCallCheck(this, Gotch);
 
-      this.xhrTagMap = {};
+      this.reqTagMap = {};
       this.config = _objectSpread2({}, config);
       this.initConfig = _objectSpread2({}, config);
       this.restoreConfig();
@@ -261,28 +267,6 @@
       }
       /**
        * @param {string} url
-       * @param {GotchRequestOptions} [options]
-       */
-
-    }, {
-      key: "request",
-      value: function request(url) {
-        var _this = this;
-
-        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-        var responseType = this.config.responseType;
-        var requestURL = this.buildRequestURL(url);
-        var requestOptions = this.buildRequestOptions(options);
-        var promise = this.dispatchRequest(requestURL, requestOptions).then(function (xhr) {
-          return _this.createResponse(requestURL, xhr);
-        }).then(function (res) {
-          return _this.handleResponse(responseType, res);
-        });
-        this.restoreConfig();
-        return promise;
-      }
-      /**
-       * @param {string} url
        */
 
     }, {
@@ -346,18 +330,38 @@
         });
       }
       /**
+       * @param {string} url
+       * @param {GotchRequestOptions} [options]
+       */
+
+    }, {
+      key: "request",
+      value: function request(url) {
+        var _this = this;
+
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var responseType = this.config.responseType;
+        var requestURL = this.buildRequestURL(url);
+        var requestOptions = this.buildRequestOptions(options);
+        var promise = this.dispatchRequest(requestURL, requestOptions).then(function (res) {
+          return _this.handleResponse(responseType, res);
+        });
+        this.restoreConfig();
+        return promise;
+      }
+      /**
        * @param {string} tag
        */
 
     }, {
       key: "cancel",
       value: function cancel(tag) {
-        var xhrs = this.xhrTagMap[tag];
+        var requests = this.reqTagMap[tag];
 
-        if (xhrs) {
-          xhrs.forEach(function (xhr) {
-            if (xhr && xhr.abort) {
-              xhr.abort();
+        if (requests) {
+          requests.forEach(function (request) {
+            if (request && request.abort) {
+              request.abort();
             }
           });
         }
@@ -383,23 +387,23 @@
       }
       /**
        * @param {string} tag
-       * @param {XMLHttpRequest} xhr
+       * @param {(XMLHttpRequest|Request)} request
        * @ignore
        */
 
     }, {
-      key: "tagXHR",
-      value: function tagXHR(tag, xhr) {
+      key: "tagRequest",
+      value: function tagRequest(tag, request) {
         var _this2 = this;
 
-        Object.keys(this.xhrTagMap).forEach(function (t) {
-          _this2.xhrTagMap[t] = _this2.xhrTagMap[t].filter(function (r) {
+        Object.keys(this.reqTagMap).forEach(function (t) {
+          _this2.reqTagMap[t] = _this2.reqTagMap[t].filter(function (r) {
             return r.readyState > 0 && r.readyState < 4;
           });
         });
 
         if (tag) {
-          this.xhrTagMap[tag] = [].concat(_toConsumableArray(this.xhrTagMap[tag] || []), [xhr]);
+          this.reqTagMap[tag] = [].concat(_toConsumableArray(this.reqTagMap[tag] || []), [request]);
         }
       }
       /**
@@ -499,7 +503,87 @@
     }, {
       key: "dispatchRequest",
       value: function dispatchRequest(url, options) {
+        var req;
+
+        if (typeof XMLHttpRequest === 'undefined') {
+          req = this.dispatchServerRequest(url, options);
+        } else {
+          req = this.dispatchClientRequest(url, options);
+        }
+
+        return req;
+      }
+      /**
+       * @param {string} url
+       * @param {object} options
+       * @param {string} options.method
+       * @param {number} options.timeout
+       * @param {boolean} options.withCredentials
+       * @param {string} options.responseType
+       * @param {(object|Headers)} options.headers
+       * @param {(string|FormData)} options.body
+       * @ignore
+       */
+
+    }, {
+      key: "dispatchServerRequest",
+      value: function dispatchServerRequest(url, options) {
         var _this3 = this;
+
+        var method = options.method,
+            timeout = options.timeout,
+            headers = options.headers,
+            body = options.body;
+        return new Promise(function (resolve, reject) {
+          var parsedURL = urlLib.parse(url);
+          var req = (parsedURL.protocol === 'https:' ? https : http).request({
+            method: method,
+            headers: headers,
+            hostname: parsedURL.hostname,
+            path: parsedURL.path,
+            port: parsedURL.port
+          }, function (res) {
+            resolve(res);
+          });
+
+          if (timeout) {
+            req.setTimeout(timeout);
+          }
+
+          req.on('timeout', function () {
+            req.abort();
+            var error = new Error('Request timeout');
+            reject(error);
+          });
+          req.on('abort', function () {
+            var error = new Error('Request aborted');
+            reject(error);
+          });
+          req.on('error', function () {
+            var error = new Error('Request failed');
+            reject(error);
+          });
+          req.end(body);
+
+          _this3.tagRequest(_this3.config.tag, req);
+        });
+      }
+      /**
+       * @param {string} url
+       * @param {object} options
+       * @param {string} options.method
+       * @param {number} options.timeout
+       * @param {boolean} options.withCredentials
+       * @param {string} options.responseType
+       * @param {(object|Headers)} options.headers
+       * @param {(string|FormData)} options.body
+       * @ignore
+       */
+
+    }, {
+      key: "dispatchClientRequest",
+      value: function dispatchClientRequest(url, options) {
+        var _this4 = this;
 
         var method = options.method,
             timeout = options.timeout,
@@ -508,95 +592,84 @@
             headers = options.headers,
             body = options.body;
         return new Promise(function (resolve, reject) {
-          var xhr = new XMLHttpRequest();
-          xhr.open(method, url);
-          xhr.timeout = timeout;
-          xhr.withCredentials = withCredentials;
-          xhr.responseType = responseType;
+          var req = new XMLHttpRequest();
+          req.open(method, url);
+          req.timeout = timeout;
+          req.withCredentials = withCredentials;
+          req.responseType = responseType;
 
           if (headers && Object.keys(headers).length > 0) {
             Object.keys(headers).forEach(function (key) {
-              xhr.setRequestHeader(key, headers[key]);
+              req.setRequestHeader(key, headers[key]);
             });
           }
 
-          if (_this3.config.withOnUploadProgress && typeof _this3.config.withOnUploadProgress === 'function') {
-            var handleUploadProgress = _this3.config.withOnUploadProgress;
+          if (_this4.config.withOnUploadProgress && typeof _this4.config.withOnUploadProgress === 'function') {
+            var handleUploadProgress = _this4.config.withOnUploadProgress;
 
-            xhr.upload.onprogress = function handleProgress(e) {
+            req.upload.onprogress = function handleProgress(e) {
               handleUploadProgress(e);
             };
           }
 
-          if (_this3.config.withOnDownloadProgress && typeof _this3.config.withOnDownloadProgress === 'function') {
-            var handleDownloadProgress = _this3.config.withOnDownloadProgress;
+          if (_this4.config.withOnDownloadProgress && typeof _this4.config.withOnDownloadProgress === 'function') {
+            var handleDownloadProgress = _this4.config.withOnDownloadProgress;
 
-            xhr.onprogress = function handleProgress(e) {
+            req.onprogress = function handleProgress(e) {
               handleDownloadProgress(e);
             };
           }
 
-          xhr.onloadend = function handleLoad() {
-            if (xhr.status) {
-              resolve(xhr);
+          req.onloadend = function handleLoad() {
+            if (req.status) {
+              var status = req.status,
+                  statusText = req.statusText,
+                  responseURL = req.responseURL,
+                  resBody = req.response;
+              var resHeaders = {};
+
+              if (req.getAllResponseHeaders) {
+                var lines = req.getAllResponseHeaders().trim().split('\n');
+                lines.forEach(function (line) {
+                  var parts = line.split(': ');
+                  var name = parts.shift();
+                  var value = parts.join(': ');
+                  resHeaders[name] = value;
+                });
+              }
+
+              var res = new Response(resBody, {
+                status: status,
+                statusText: statusText,
+                headers: resHeaders
+              });
+              Object.defineProperty(res, 'url', {
+                value: url
+              });
+              Object.defineProperty(res, 'responseURL', {
+                value: responseURL
+              });
+              resolve(res);
             } else {
               var error = new Error('Request failed');
               reject(error);
             }
           };
 
-          xhr.ontimeout = function handleTimeout() {
+          req.ontimeout = function handleTimeout() {
             var error = new Error('Request timeout');
             reject(error);
           };
 
-          xhr.onabort = function handleAbort() {
+          req.onabort = function handleAbort() {
             var error = new Error('Request aborted');
             reject(error);
           };
 
-          xhr.send(body);
+          req.send(body);
 
-          _this3.tagXHR(_this3.config.tag, xhr);
+          _this4.tagRequest(_this4.config.tag, req);
         });
-      }
-      /**
-       * @param {string} url
-       * @param {XMLHttpRequest} xhr
-       * @ignore
-       */
-
-    }, {
-      key: "createResponse",
-      value: function createResponse(url, xhr) {
-        if (xhr && xhr.status && xhr.getAllResponseHeaders) {
-          var status = xhr.status,
-              statusText = xhr.statusText,
-              responseURL = xhr.responseURL,
-              body = xhr.response;
-          var lines = xhr.getAllResponseHeaders().trim().split('\n');
-          var headers = {};
-          lines.forEach(function (line) {
-            var parts = line.split(': ');
-            var name = parts.shift();
-            var value = parts.join(': ');
-            headers[name] = value;
-          });
-          var response = new Response(body, {
-            status: status,
-            statusText: statusText,
-            headers: headers
-          });
-          Object.defineProperty(response, 'url', {
-            value: url
-          });
-          Object.defineProperty(response, 'responseURL', {
-            value: responseURL
-          });
-          return response;
-        }
-
-        return undefined;
       }
       /**
        * @param {string} type
@@ -607,6 +680,32 @@
     }, {
       key: "handleResponse",
       value: function handleResponse(type, response) {
+        if (typeof XMLHttpRequest === 'undefined') {
+          var statusCode = response.statusCode,
+              statusMessage = response.statusMessage;
+          return new Promise(function (resolve, reject) {
+            var chunks = [];
+            response.on('data', function (chunk) {
+              chunks.push(chunk);
+            });
+            response.on('end', function () {
+              var data = Buffer.concat(chunks);
+
+              if (statusCode >= 200 && statusCode < 300) {
+                response.data = data;
+                resolve(response);
+              } else {
+                var error = new Error("".concat(statusCode, " ").concat(statusMessage)); // error.response = response;
+
+                reject(error);
+              }
+            });
+            response.on('error', function (e) {
+              reject(e);
+            });
+          });
+        }
+
         if (response instanceof Response) {
           var res = response.clone();
           var ok = response.ok,
@@ -682,7 +781,7 @@
     }, {
       key: "transformToText",
       value: function transformToText(params) {
-        if (params && params instanceof FormData) {
+        if (params && typeof FormData === 'function' && params instanceof FormData) {
           return new URLSearchParams(params).toString();
         }
 
@@ -700,7 +799,7 @@
     }, {
       key: "transformToJson",
       value: function transformToJson(params) {
-        if (params && params instanceof FormData) {
+        if (params && typeof FormData === 'function' && params instanceof FormData) {
           var parsedParams = {};
           params.forEach(function (value, key) {
             if (value === undefined) {
@@ -731,11 +830,11 @@
     }, {
       key: "transformToForm",
       value: function transformToForm(params) {
-        if (params && params instanceof FormData) {
+        if (params && typeof FormData === 'function' && params instanceof FormData) {
           return params;
         }
 
-        if (params && _typeof(params) === 'object') {
+        if (params && _typeof(params) === 'object' && typeof FormData === 'function') {
           var formData = new FormData();
           Object.keys(params).forEach(function (key) {
             var value = params[key];
