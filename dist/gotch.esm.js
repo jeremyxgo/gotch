@@ -364,7 +364,7 @@ var Gotch = /*#__PURE__*/function () {
     key: "restoreConfig",
     value: function restoreConfig() {
       this.config = {
-        baseURL: this.initConfig.baseURL || undefined,
+        baseURL: this.initConfig.baseURL || '',
         requestType: this.initConfig.requestType || 'json',
         responseType: this.initConfig.responseType || 'json',
         tag: this.initConfig.tag || undefined,
