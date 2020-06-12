@@ -137,22 +137,22 @@ Available configuration for creating an instance by using `.create([config])`
   // - 'blob': response.data will be a blob
   responseType: 'json',
 
-  // `tag` will be used to grouping requests, request(s) with a tag can 
-  // be canceled by using .cancel(tag)
-  tag: '',
-
   // `timeout` is a number of milliseconds, if the request takes longer
   // than this number, it will be aborted
   timeout: 0,
+
+  // `authorization` is a string or a function that returns a string which
+  // to authenticate a user agent with a server
+  authorization: undefined,
 
   // `credentials` determines whether or not cross-site Access-Control
   // requests should be made using credentials
   // Acceptable values are: 'include', 'same-origin', 'omit'
   credentials: 'same-origin',
 
-  // `authorization` is a string or a function that returns a string which
-  // to authenticate a user agent with a server
-  authorization: undefined,
+  // `cancelTag` will be used to tagging request(s), request(s) with a cancelTag can 
+  // be canceled by using .cancel(cancelTag)
+  cancelTag: undefined,
 
   // `onUploadProgress` is a function to handle upload progress event
   onUploadProgress: undefined,
@@ -213,24 +213,10 @@ gotch.withResponseType('json');
 // returns a Gotch instance
 ```
 
-### .withTag(tag)
-Overwrite `tag` for next request
-```js
-gotch.withTag('get-user-req');
-// returns a Gotch instance
-```
-
 ### .withTimeout(timeout)
 Overwrite `timeout` for next request
 ```js
 gotch.withTimeout(2000);
-// returns a Gotch instance
-```
-
-### .withCredentials(credentials)
-Overwrite `credentials` for next request
-```js
-gotch.withCredentials('include');
 // returns a Gotch instance
 ```
 
@@ -248,7 +234,21 @@ gotch.withAuthorization(() => {
 // returns a Gotch instance
 ```
 
-### .withOnUploadProgress(handleEvent)
+### .withCredentials(credentials)
+Overwrite `credentials` for next request
+```js
+gotch.withCredentials('include');
+// returns a Gotch instance
+```
+
+### .withCancelTag(cancelTag)
+Overwrite `cancelTag` for next request
+```js
+gotch.withCancelTag('get-user-req');
+// returns a Gotch instance
+```
+
+### .withOnUploadProgress(onUploadProgress)
 Overwrite `onUploadProgress` for next request
 ```js
 gotch.withOnUploadProgress((e) => {
@@ -257,7 +257,7 @@ gotch.withOnUploadProgress((e) => {
 // returns a Gotch instance
 ```
 
-### .withOnDownloadProgress(handleEvent)
+### .withOnDownloadProgress(onDownloadProgress)
 Overwrite `onDownloadProgress` for next request
 ```js
 gotch.withOnDownloadProgress((e) => {
@@ -323,11 +323,11 @@ gotch.delete('/users/1');
 // returns a promise
 ```
 
-### .cancel(tag)
-Cancel request(s) grouping by the same tag
+### .cancel(cancelTag)
+Cancel request(s) tagged by the same cancelTag
 ```js
 gotch.cancel('get-user-req');
-// all the requests have the `get-user-req` tag will be aborted
+// all the requests have the `get-user-req` cancelTag will be aborted
 ```
 
 ## License
